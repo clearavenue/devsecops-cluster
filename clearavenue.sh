@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-START="$(date +%s)"
+start=$(date +%s.%N)
 
 function echo_header() {
   echo
@@ -60,7 +60,6 @@ kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}
 kubectl -n argocd get service argocd-server -o jsonpath='{.status.loadBalancer.ingress}' | jq -r '.[].hostname' > argocd-info.txt
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d >> argocd-info.txt
 
-export GITHUB_TOKEN=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
 envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
 
 # kubernetes dashboard
@@ -69,5 +68,7 @@ envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
 #kubectl proxy &
 
 kubectl cluster-info
-DURATION=$[ $(date +%s) - ${START} ]
-echo "Finished in " ${DURATION}
+
+duration=$(echo "$(date +%s.%N) - $start" | bc)
+execution_time=`printf "%.2f seconds" $duration`
+echo "Script Execution Time: $execution_time"
