@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: grafana
+  url: https://grafana.github.io/helm-charts
+  type: helm
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-apps
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: argocd-apps
+  url: https://github.com/clearavenue/argocd-apps.git
+  type: git
+  username: clearavenue
+  password: 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
