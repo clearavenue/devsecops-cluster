@@ -22,4 +22,4 @@ stringData:
   url: https://github.com/clearavenue/argocd-apps.git
   type: git
   username: clearavenue
-  password: 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
+  password: $GITHUB_TOKEN

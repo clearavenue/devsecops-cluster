@@ -57,13 +57,17 @@ echo_header "Install ArgoCD"
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-#kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
-#kubectl apply -n argocd -f argocd-repositories.yaml
+kubectl -n argocd get service argocd-server -o jsonpath='{.status.loadBalancer.ingress}' | jq -r '.[].hostname' > argocd-info.txt
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d >> argocd-info.txt
+
+export GITHUB_TOKEN=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
+envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
 
 # kubernetes dashboard
 #echo_header "Install Kubernetes Dashboard"
 #kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
 #kubectl proxy &
 
+kubectl cluster-info
 DURATION=$[ $(date +%s) - ${START} ]
 echo "Finished in " ${DURATION}
