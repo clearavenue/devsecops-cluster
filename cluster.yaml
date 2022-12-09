@@ -1,0 +1,36 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: clearavenue-cluster
+  region: us-east-2
+
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: sa-external-dns
+      namespace: external-dns
+    attachPolicyARNs:
+      - "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+  - metadata:
+      name: sa-cert-manager
+      namespace: cert-manager
+    wellKnownPolicies:
+      certManager: true
+    attachPolicyARNs:
+      - "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+
+nodeGroups:
+  - name: clearavenue-cluster-ng
+    instanceType: t3.medium
+    desiredCapacity: 3
+    labels: 
+       lifecycle: OnDemand
+
+availabilityZones: ["us-east-2a", "us-east-2b"]
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["audit", "authenticator", "controllerManager"]
+    logRetentionInDays: 7

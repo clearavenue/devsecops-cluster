@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: istio-ingress-certs
+  namespace: istio-system
+spec:
+  secretName: istio-ingressgateway-certs
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  commonName: cluster.clearavenue.com
+  dnsNames:
+    - 'cluster.clearavenue.com'
+    - '*.cluster.clearavenue.com'

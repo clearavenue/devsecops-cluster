@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+  namespace: istio-system
+spec:
+  acme:
+    email: bill.hunt@clearavenue.com
+    privateKeySecretRef:
+      name: letsencrypt
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    solvers:
+    - dns01:
+        route53:
+          region: us-east-2
+          hostedZoneID: Z0260156R1I9JFITTRE6
+      selector:
+        dnsZones:
+          - "cluster.clearavenue.com"

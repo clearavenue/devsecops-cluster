@@ -1,12 +1,18 @@
-# Kill kubectl proxy
-pkill kubectl
+#!/bin/bash
 
-#Destroy kubernetes objects
-kubectl -n default delete po,svc,deployment,rs,secret,configmap --all
-kubectl delete namespaces dev stage prod
+function echo_header() {
+  echo
+  echo "########################################################################"
+  echo $1
+  echo "########################################################################"
+  echo " "
+}
 
-# Destroy cloud infrastructure created using terraform apply
-terraform destroy --auto-approve
+echo_header "Remove external_dns"
+kubectl delete -f external-dns-deployment.yaml
 
-rm -rf .terr*
-rm terraform.tfstate*
+echo_header "Remove istio"
+istioctl uninstall -y --purge
+
+echo_header "Destroy cluster"
+eksctl delete cluster -f cluster.yaml
