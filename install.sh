@@ -43,7 +43,7 @@ helm repo update
 
 # Create cluster
 echo_header "Create cluster"
-eksctl create cluster -f cluster.yaml
+eksctl create cluster -f cluster/cluster.yaml
 
 sleep 30
 
@@ -69,15 +69,17 @@ istioctl install -y --set profile=demo
 
 # Install external-dns
 echo_header "Install external-dns"
-kubectl apply -f external-dns-deployment.yaml
+kubectl apply -f cluster/external-dns-deployment.yaml
 
 # Create cluster issuer and cert
 echo_header "Install cluster issuer and cert"
-kubectl apply -f cluster-issuer.yaml
-kubectl apply -f cluster-cert.yaml
+kubectl apply -f cluster/certificate/cluster-issuer.yaml
+kubectl apply -f cluster/certificate/cluster-cert.yaml
 
 # Install Istio Gateway
 echo_header "Install Istio Gateway"
-kubectl apply -f istio-gateway.yaml
+kubectl apply -f istio/istio-gateway.yaml
 
 # Install ArgoCD
+kubectl apply -f argocd/argocd-namespace.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.4.7/manifests/install.yaml
