@@ -82,7 +82,8 @@ kubectl apply -f istio/istio-gateway.yaml
 
 # Install ArgoCD
 echo_header "Install ArgoCD"
-./argocd/install-argocd.sh
+cd argocd
+./install-argocd.sh
 
 # Configure ArgoCD
 echo_header "Update ArgoCD password"
@@ -93,7 +94,7 @@ argocd account update-password --grpc-web --insecure --current-password $ARGOCD_
 # Setup ArgoCD apps
 echo_header "Deploy ArgoCD applications"
 envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
-#kubectl apply -n argocd -f apps-application.yaml
+kubectl apply -n argocd -f apps-application.yaml
 
 kubectl cluster-info
 kubectl config current-context
