@@ -9,10 +9,10 @@ function echo_header() {
 }
 
 echo_header "Remove external_dns"
-kubectl delete -f external-dns-deployment.yaml
+kubectl delete -f cluster/external-dns-deployment.yaml
 
 echo_header "Remove istio"
 istioctl uninstall -y --purge
 
 echo_header "Destroy cluster"
-eksctl delete cluster -f cluster.yaml
+eksctl delete cluster -f cluster/cluster.yaml
