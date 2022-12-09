@@ -81,5 +81,23 @@ echo_header "Install Istio Gateway"
 kubectl apply -f istio/istio-gateway.yaml
 
 # Install ArgoCD
-kubectl apply -f argocd/argocd-namespace.yaml
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.4.7/manifests/install.yaml
+echo_header "Install ArgoCD"
+./argocd/install-argocd.sh
+
+# Configure ArgoCD
+echo_header "Update ArgoCD password"
+ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
+argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
+argocd account update-password --grpc-web --insecure --current-password $ARGOCD_PWD --new-password cL3ar#12
+
+# Setup ArgoCD apps
+echo_header "Deploy ArgoCD applications"
+envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
+#kubectl apply -n argocd -f apps-application.yaml
+
+kubectl cluster-info
+kubectl config current-context
+
+duration=$(echo "$(date +%s.%N) - $start" | bc)
+execution_time=`printf "%.2f seconds" $duration`
+echo_header "Script Execution Time: $execution_time"
