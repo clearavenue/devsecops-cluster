@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/terraform
 # Edit at https://www.toptal.com/developers/gitignore?templates=terraform
 
+**argocd-cmd-params-cm.yaml
+
 ### Terraform ###
 # Local .terraform directories
 **/.terraform/*
@@ -39,5 +41,3 @@ override.tf.json
 terraform.rc
 
 # End of https://www.toptal.com/developers/gitignore/api/terraform
-
-argocd-info.txt
