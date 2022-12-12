@@ -87,10 +87,10 @@ cd argocd
 sleep 30
 
 # Configure ArgoCD
-echo_header "Update ArgoCD password"
+echo "To Update ArgoCD password..."
 ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
-argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
-argocd account update-password --grpc-web --insecure --current-password $ARGOCD_PWD --new-password cL3ar#12
+echo argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
+echo argocd account update-password --grpc-web --insecure --current-password $ARGOCD_PWD --new-password cL3ar#12
 
 # Setup ArgoCD apps
 echo_header "Deploy ArgoCD applications"
