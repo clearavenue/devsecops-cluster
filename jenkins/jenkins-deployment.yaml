@@ -7,11 +7,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jenkins-server
+      app: jenkins
   template:
     metadata:
       labels:
-        app: jenkins-server
+        app: jenkins
     spec:
       securityContext:
             fsGroup: 1000 
@@ -53,4 +53,4 @@ spec:
               mountPath: /var/jenkins_home         
       volumes:
         - name: jenkins-data
-        emptyDir: \{}
+          emptyDir: {}

@@ -8,6 +8,10 @@ function echo_header() {
   echo " "
 }
 
+echo_header "Remove virtual services and DNS entries"
+kubectl delete virtualservice --all --all-namespaces
+sleep 15
+
 echo_header "Remove external_dns"
 kubectl delete -f cluster/external-dns-deployment.yaml
 
