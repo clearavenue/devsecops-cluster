@@ -107,6 +107,15 @@ kubectl apply -f jenkins-deployment.yaml
 kubectl apply -f jenkins-service.yaml
 kubectl apply -f jenkins-virtualservice.yaml
 
+sleep 30
+
+resolvedIP=$(nslookup "jenkins.cluster.clearavenue.com" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+while [ -z "$resolvedIP" ]; do
+   echo "jenkins alias not ready"
+   resolvedIP=$(nslookup "jenkins.cluster.clearavenue.com" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+   sleep 5
+done
+
 initialAdminPassword=$(kubectl exec -n jenkins $(kubectl get pods -n jenkins -o jsonpath="{.items[0].metadata.name}") -- cat /var/jenkins_home/secrets/initialAdminPassword)
 wget https://jenkins.cluster.clearavenue.com/jnlpJars/jenkins-cli.jar
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth admin:$initialAdminPassword groovy = < generate-user-and-token.groovy > secret.txt
