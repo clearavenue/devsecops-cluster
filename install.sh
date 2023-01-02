@@ -97,6 +97,15 @@ echo_header "Deploy ArgoCD applications"
 envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
 kubectl apply -n argocd -f apps-application.yaml
 
+# Install Jenkins
+echo_header "Install Jenkins"
+cd jenkins
+kubectl apply -f jenkins-namespace.yaml
+kubectl apply -f jenkins-sa.yaml
+kubectl apply -f jenkins-deployment.yaml
+kubectl apply -f jenkins-service.yaml
+kubectl apply -f jenkins-virtualservice.yaml
+
 cd ..
 kubectl cluster-info
 kubectl config current-context
