@@ -116,9 +116,11 @@ while [ -z "$resolvedIP" ]; do
    sleep 5
 done
 
+while [[ $(kubectl get pods -n jenkins -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for jenkins pod" && sleep 1; done
+
 initialAdminPassword=$(kubectl exec -n jenkins $(kubectl get pods -n jenkins -o jsonpath="{.items[0].metadata.name}") -- cat /var/jenkins_home/secrets/initialAdminPassword)
 wget https://jenkins.cluster.clearavenue.com/jnlpJars/jenkins-cli.jar
-java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth admin:$initialAdminPassword groovy = < generate-user-and-token.groovy > secret.txt
+java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth admin:$initialAdminPassword groovy = < generate-user-and-token.groovy
 
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin trilead-api
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin cloudbees-folder

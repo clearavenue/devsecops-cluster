@@ -20,3 +20,6 @@ istioctl uninstall -y --purge
 
 echo_header "Destroy cluster"
 eksctl delete cluster -f cluster/cluster.yaml
+
+echo_header "Clean up jenkins temp files"
+rm jenkins/jenkins-cli.jar
