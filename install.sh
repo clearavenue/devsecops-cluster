@@ -3,6 +3,7 @@
 ### VARIABLES ###
 CLUSTER_NAME=clearavenue-cluster
 REGION=us-east-2
+CERTS=/tmp/devsecops-cluster/letsencrypt
 
 start=$(date +%s.%N)
 
@@ -12,6 +13,18 @@ function echo_header() {
   echo $1
   echo "########################################################################"
   echo " "
+}
+
+function wait_website_ready() {
+   check_web=$(curl -j -s --head --request GET $1 --cacert $CERTS/StagingArtificialApricotR3.crt | grep "200\|403" > /dev/null && echo "READY" || echo "NOT_READY")
+   #check_web=$(curl -j -s --head --request GET $1 | grep "200\|403" > /dev/null && echo "READY" || echo "NOT_READY")
+   while [ $check_web != "READY" ]; do
+      echo "$1 not ready"
+      sleep 30
+      check_web=$(curl -j -s --head --request GET $1 --cacert $CERTS/StagingArtificialApricotR3.crt | grep "200\|403" > /dev/null && echo "READY" || echo "NOT_READY")
+      #check_web=$(curl -j -s --head --request GET $1 | grep "200\|403" > /dev/null && echo "READY" || echo "NOT_READY")
+   done
+   echo "$1 ready"
 }
 
 function usage {
@@ -80,17 +93,26 @@ kubectl apply -f cluster/certificate/cluster-cert.yaml
 echo_header "Install Istio Gateway"
 kubectl apply -f istio/istio-gateway.yaml
 
+
 # Install ArgoCD
 echo_header "Install ArgoCD"
 cd argocd
-./install-argocd.sh
+kubectl apply -f argocd-namespace.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl get -n argocd configmap argocd-cmd-params-cm -o yaml > argocd-cmd-params-cm.yaml
+echo "data:" >> argocd-cmd-params-cm.yaml
+echo "  server.insecure: \"true\"" >> argocd-cmd-params-cm.yaml
+kubectl apply -f argocd-cmd-params-cm.yaml
+kubectl rollout restart deploy -n argocd argocd-server
+kubectl apply -f argocd-virtualservice.yaml
+ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
+echo $ARGOCD_PWD
+
 sleep 30
 
-# Configure ArgoCD
-echo "To Update ArgoCD password..."
-ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
-echo argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
-echo argocd account update-password --grpc-web --insecure --current-password $ARGOCD_PWD --new-password cL3ar#12
+while [[ $(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for argocd pod" && sleep 1; done
+wait_website_ready "https://argocd.cluster.clearavenue.com"
 
 # Setup ArgoCD apps
 echo_header "Deploy ArgoCD applications"
@@ -98,28 +120,15 @@ envsubst < argocd-repositories.yaml | kubectl apply -n argocd -f -
 kubectl apply -n argocd -f apps-application.yaml
 cd ..
 
-# Install Jenkins
-echo_header "Install Jenkins"
+# Configure Jenkins
+echo_header "Configure Jenkins"
 cd jenkins
-kubectl apply -f jenkins-namespace.yaml
-kubectl apply -f jenkins-sa.yaml
-kubectl apply -f jenkins-deployment.yaml
-kubectl apply -f jenkins-service.yaml
-kubectl apply -f jenkins-virtualservice.yaml
-
-sleep 30
-
-resolvedIP=$(nslookup "jenkins.cluster.clearavenue.com" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
-while [ -z "$resolvedIP" ]; do
-   echo "jenkins alias not ready"
-   resolvedIP=$(nslookup "jenkins.cluster.clearavenue.com" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
-   sleep 5
-done
 
 while [[ $(kubectl get pods -n jenkins -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for jenkins pod" && sleep 1; done
+wait_website_ready "https://jenkins.cluster.clearavenue.com"
 
 initialAdminPassword=$(kubectl exec -n jenkins $(kubectl get pods -n jenkins -o jsonpath="{.items[0].metadata.name}") -- cat /var/jenkins_home/secrets/initialAdminPassword)
-wget https://jenkins.cluster.clearavenue.com/jnlpJars/jenkins-cli.jar
+wget https://jenkins.cluster.clearavenue.com/jnlpJars/jenkins-cli.jar --no-hsts --no-check-certificate
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth admin:$initialAdminPassword groovy = < generate-user-and-token.groovy
 
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin trilead-api
@@ -229,7 +238,42 @@ java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenki
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin docker-java-api
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin docker-build-step
 
+# delete jcasc config if exists and replace with clean template
+echo delete jcasc config if exists and replace with clean template
+[ -e jcasc-default-config.yaml ] && rm jcasc-default-config.yaml
+cp jcasc-default-config.yaml.template jcasc-default-config.yaml
+
+# get the jenkins service account token and update in template
+echo get the jenkins service account token and update in template
+jenkinstoken=$(kubectl get secret $(kubectl get sa jenkins-admin -n jenkins -o jsonpath='{.secrets[0].name}') -n jenkins -o jsonpath='{.data.token}' | base64 --decode)
+sed -i "s|JENKINS-SA-TOKEN|$jenkinstoken|g" jcasc-default-config.yaml
+
+# get the cluster url and update in template
+echo get the cluster url and update in template
+cluster_url=$(kubectl cluster-info | grep -E 'Kubernetes master|Kubernetes control plane' | awk '/https/ {print $NF}' | sed 's/https\?:\/\///')
+sed -i "s|CLUSTERADDRESS|$cluster_url|g" jcasc-default-config.yaml
+sed -i "s|\x1b\[[^m]*m||g" jcasc-default-config.yaml
+
+# Configure ArgoCD
+echo "updating ArgoCD password..."
+ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
+argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
+argocd account update-password --grpc-web --insecure --current-password $ARGOCD_PWD --new-password cL3ar#12
+
+# create and get argocd role token and update in template
+echo create and get argocd role token and update in template
+argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password cL3ar#12
+argocd proj role create default jenkins-deploy-role --description "jenkins deploy role"
+argocd proj role add-policy default jenkins-deploy-role --action '*' --permission 'allow' --object '*'
+roletoken=$(argocd proj role create-token default jenkins-deploy-role | awk '/Token:/ {print $NF}')
+sed -i "s|ARGOCD-DEPLOY-ROLE|$roletoken|g" jcasc-default-config.yaml
+
+# create a clusterrolebinding for jenkins
+echo create a clusterrolebinding for jenkins
+kubectl create clusterrolebinding jenkins-cluster-admin --clusterrole=cluster-admin --serviceaccount=jenkins:jenkins --dry-run=client -o yaml | kubectl apply -f -
+
 cd ..
+
 kubectl cluster-info
 kubectl config current-context
 

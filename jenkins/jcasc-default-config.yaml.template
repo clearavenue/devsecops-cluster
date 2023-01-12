@@ -1,0 +1,153 @@
+credentials:
+  system:
+    domainCredentials:
+    - credentials:
+      - usernamePassword:
+          description: "sourcecontrol-email"
+          id: "sourcecontrol-email"
+          password: "SnakeOrangeUnder#2"
+          scope: GLOBAL
+          username: "sourcecontrol@clearavenue.com"
+      - usernamePassword:
+          description: "clearavenuedocker credentials"
+          id: "docker"
+          password: "XKvbxFHkqw5kCcY"
+          scope: GLOBAL
+          username: "clearavenuedocker"
+      - string:
+          description: "bill.hunt-github-token"
+          id: "bill.hunt-github-token"
+          scope: GLOBAL
+          secret: "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"
+      - string:
+          description: "jenkins-serviceaccount"
+          id: "jenkins-serviceaccount"
+          scope: GLOBAL
+          secret: "JENKINS-SA-TOKEN"
+      - string:
+          description: "argocd-deploy-role"
+          id: "argocd-deploy-role"
+          scope: GLOBAL
+          secret: "ARGOCD-DEPLOY-ROLE"
+
+jenkins:
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+      - id: "jenkins"
+        name: "jenkins"
+        password: "cL3ar#12"
+        properties:
+        - mailer:
+            emailAddress: "sourcecontrol@clearavenue.com"
+  disableRememberMe: false
+  remotingSecurity:
+    enabled: true
+  mode: NORMAL
+  numExecutors: 0
+  labelString: ""
+  projectNamingStrategy: "standard"
+  systemMessage: "Welcome to the clearAvenue devsecops Jenkins server"
+  markupFormatter: plainText
+  globalNodeProperties:
+  - envVars:
+      env:
+      - key: "CLUSTER_URL"
+        value: "CLUSTERADDRESS"
+  clouds:
+  - kubernetes:
+      containerCap: 10
+      containerCapStr: "10"
+      credentialsId: "jenkins-serviceaccount"
+      jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+      jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+      name: "kubernetes"
+      namespace: "default"
+      podLabels:
+      - key: "jenkins/jenkins-jenkins-agent"
+        value: "true"
+      podRetention: "onFailure"
+      serverUrl: "http://kubernetes.default"
+      templates:
+      - containers:
+        - args: "^${computer.jnlpmac} ^${computer.name}"
+          command: "sleep"
+          envVars:
+          - envVar:
+              key: "JENKINS_URL"
+              value: "http://jenkins.jenkins.svc.cluster.local:8080/"
+          image: "jenkins/inbound-agent:4.11-1"
+          livenessProbe:
+            failureThreshold: 0
+            initialDelaySeconds: 0
+            periodSeconds: 0
+            successThreshold: 0
+            timeoutSeconds: 0
+          name: "jnlp"
+          resourceLimitCpu: "512m"
+          resourceLimitMemory: "512Mi"
+          resourceRequestCpu: "512m"
+          resourceRequestMemory: "512Mi"
+          workingDir: "/home/jenkins/agent"
+        label: "jenkins-jenkins-agent"
+        name: "default"
+        nodeUsageMode: "NORMAL"
+        podRetention: "never"
+        serviceAccount: "jenkins"
+        slaveConnectTimeout: 100
+        slaveConnectTimeoutStr: "100"
+        yamlMergeStrategy: "override"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+unclassified:
+  globalLibraries:
+    libraries:
+    - defaultVersion: "main"
+      name: "clearavenue/clearavenue-jenkins-sharedlib"
+      retriever:
+        modernSCM:
+          scm:
+            github:
+              configuredByUrl: true
+              credentialsId: "bill.hunt-github-token"
+              repoOwner: "clearavenue"
+              repository: "clearavenue-jenkins-sharedlib"
+              repositoryUrl: "https://github.com/clearavenue/clearavenue-jenkins-sharedlib.git"
+  location:
+    adminAddress: sourcecontrol@clearavenue.com
+    url: "http://kubernetes.default/"
+  mailer:
+    authentication:
+      password: "SnakeOrangeUnder#2"
+      username: "sourcecontrol@clearavenue.com"
+    smtpHost: "smtp.gmail.com"
+    smtpPort: "465"
+    useSsl: true
+  email-ext:
+    allowUnregisteredEnabled: true
+    mailAccount:
+      credentialsId: "sourcecontrol-email"
+      smtpHost: "smtp.gmail.com"
+      smtpPort: "465"
+      useSsl: true
+    defaultReplyTo: "sourcecontrol@clearavenue.com"
+tool:
+  maven:
+    installations:
+    - name: "maven-3.8.4"
+      properties:
+      - installSource:
+          installers:
+          - maven:
+              id: "3.8.4"

@@ -12,11 +12,11 @@ echo_header "Remove virtual services and DNS entries"
 kubectl delete virtualservice --all --all-namespaces
 sleep 15
 
-echo_header "Remove external_dns"
-kubectl delete -f cluster/external-dns-deployment.yaml
-
 echo_header "Remove istio"
 istioctl uninstall -y --purge
+
+echo_header "Remove external_dns"
+kubectl delete -f cluster/external-dns-deployment.yaml
 
 echo_header "Destroy cluster"
 eksctl delete cluster -f cluster/cluster.yaml

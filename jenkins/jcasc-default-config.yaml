@@ -1,0 +1,153 @@
+credentials:
+  system:
+    domainCredentials:
+    - credentials:
+      - usernamePassword:
+          description: "sourcecontrol-email"
+          id: "sourcecontrol-email"
+          password: "SnakeOrangeUnder#2"
+          scope: GLOBAL
+          username: "sourcecontrol@clearavenue.com"
+      - usernamePassword:
+          description: "clearavenuedocker credentials"
+          id: "docker"
+          password: "XKvbxFHkqw5kCcY"
+          scope: GLOBAL
+          username: "clearavenuedocker"
+      - string:
+          description: "bill.hunt-github-token"
+          id: "bill.hunt-github-token"
+          scope: GLOBAL
+          secret: "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"
+      - string:
+          description: "jenkins-serviceaccount"
+          id: "jenkins-serviceaccount"
+          scope: GLOBAL
+          secret: "eyJhbGciOiJSUzI1NiIsImtpZCI6ImxLMGdhNk1iNGk3aEx4UURIbTBibFlmVVZGR2Zhc0JSUGlZeHVOV3dwVzQifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJqZW5raW5zIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImplbmtpbnMtYWRtaW4tdG9rZW4ta3BoN2siLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiamVua2lucy1hZG1pbiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjczNWUyZjkxLTA2YzgtNGY5MS05MTk0LWM0YmM2NjkwNWEwYiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpqZW5raW5zOmplbmtpbnMtYWRtaW4ifQ.cprj07l03aqmHRU6lxQZZ4eyZyeakFImYPSmZPrImTKNTtuDhGyzel2gnxwy8uTM1IYtR1_1Hb1GrgWb9tzogmQ6JdEmf719E5s-qTTm1qoWw40B2IT1Wfgj6DfoLJnV--ulGb7gtl4xwXfDAWMURS91mSia5cU7mXCWYp3Yf8-gbOkhRTjSyhxH8ij685EUjjg8pa3zThrtRV2LCBGVqrxpiAbRAJoQpo5TDGfbfeiSsMWEXx5bLsgZBZi8mP_A__u7xWVwp__QB_bZ6Q0qBScDX8dLLQ_tXB6sC5KoZE8_TC8wetc8wzlXhFTKqai5wsESBIO6DYHEI-s_0wCwqw"
+      - string:
+          description: "argocd-deploy-role"
+          id: "argocd-deploy-role"
+          scope: GLOBAL
+          secret: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhcmdvY2QiLCJzdWIiOiJwcm9qOmRlZmF1bHQ6amVua2lucy1kZXBsb3ktcm9sZSIsIm5iZiI6MTY3MzU1Njg2NiwiaWF0IjoxNjczNTU2ODY2LCJqdGkiOiIzNzBiM2NiNy0yYTgwLTRlMjItYWE4MC0xZTVhODEyM2M0ZDcifQ.iMqT92BJFyCTLIEytP-Vf0pbexy_16UyTV4XNTNg7Nk"
+
+jenkins:
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+      - id: "jenkins"
+        name: "jenkins"
+        password: "cL3ar#12"
+        properties:
+        - mailer:
+            emailAddress: "sourcecontrol@clearavenue.com"
+  disableRememberMe: false
+  remotingSecurity:
+    enabled: true
+  mode: NORMAL
+  numExecutors: 0
+  labelString: ""
+  projectNamingStrategy: "standard"
+  systemMessage: "Welcome to the clearAvenue devsecops Jenkins server"
+  markupFormatter: plainText
+  globalNodeProperties:
+  - envVars:
+      env:
+      - key: "CLUSTER_URL"
+        value: "DB193B4BE485A9D445186C97571BC435.gr7.us-east-2.eks.amazonaws.com"
+  clouds:
+  - kubernetes:
+      containerCap: 10
+      containerCapStr: "10"
+      credentialsId: "jenkins-serviceaccount"
+      jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+      jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
+      name: "kubernetes"
+      namespace: "default"
+      podLabels:
+      - key: "jenkins/jenkins-jenkins-agent"
+        value: "true"
+      podRetention: "onFailure"
+      serverUrl: "http://kubernetes.default"
+      templates:
+      - containers:
+        - args: "^${computer.jnlpmac} ^${computer.name}"
+          command: "sleep"
+          envVars:
+          - envVar:
+              key: "JENKINS_URL"
+              value: "http://jenkins.jenkins.svc.cluster.local:8080/"
+          image: "jenkins/inbound-agent:4.11-1"
+          livenessProbe:
+            failureThreshold: 0
+            initialDelaySeconds: 0
+            periodSeconds: 0
+            successThreshold: 0
+            timeoutSeconds: 0
+          name: "jnlp"
+          resourceLimitCpu: "512m"
+          resourceLimitMemory: "512Mi"
+          resourceRequestCpu: "512m"
+          resourceRequestMemory: "512Mi"
+          workingDir: "/home/jenkins/agent"
+        label: "jenkins-jenkins-agent"
+        name: "default"
+        nodeUsageMode: "NORMAL"
+        podRetention: "never"
+        serviceAccount: "jenkins"
+        slaveConnectTimeout: 100
+        slaveConnectTimeoutStr: "100"
+        yamlMergeStrategy: "override"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: true
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+unclassified:
+  globalLibraries:
+    libraries:
+    - defaultVersion: "main"
+      name: "clearavenue/clearavenue-jenkins-sharedlib"
+      retriever:
+        modernSCM:
+          scm:
+            github:
+              configuredByUrl: true
+              credentialsId: "bill.hunt-github-token"
+              repoOwner: "clearavenue"
+              repository: "clearavenue-jenkins-sharedlib"
+              repositoryUrl: "https://github.com/clearavenue/clearavenue-jenkins-sharedlib.git"
+  location:
+    adminAddress: sourcecontrol@clearavenue.com
+    url: "http://kubernetes.default/"
+  mailer:
+    authentication:
+      password: "SnakeOrangeUnder#2"
+      username: "sourcecontrol@clearavenue.com"
+    smtpHost: "smtp.gmail.com"
+    smtpPort: "465"
+    useSsl: true
+  email-ext:
+    allowUnregisteredEnabled: true
+    mailAccount:
+      credentialsId: "sourcecontrol-email"
+      smtpHost: "smtp.gmail.com"
+      smtpPort: "465"
+      useSsl: true
+    defaultReplyTo: "sourcecontrol@clearavenue.com"
+tool:
+  maven:
+    installations:
+    - name: "maven-3.8.4"
+      properties:
+      - installSource:
+          installers:
+          - maven:
+              id: "3.8.4"
