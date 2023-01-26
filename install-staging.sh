@@ -121,8 +121,10 @@ kubectl apply -n argocd -f apps-application.yaml
 cd ..
 
 # Configure Jenkins
-echo_header "Configure Jenkins"
+echo_header "Configure Jenkins after 1 minute..."
 cd jenkins
+
+sleep 60
 
 while [[ $(kubectl get pods -n jenkins -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for jenkins pod" && sleep 1; done
 wait_website_ready "https://jenkins.cluster.clearavenue.com"
@@ -238,6 +240,9 @@ java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenki
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin docker-java-api
 java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 install-plugin docker-build-step
 
+java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 restart
+sleep 30
+
 # delete jcasc config if exists and replace with clean template
 echo delete jcasc config if exists and replace with clean template
 [ -e jcasc-default-config.yaml ] && rm jcasc-default-config.yaml
@@ -254,7 +259,7 @@ cluster_url=$(kubectl cluster-info | grep -E 'Kubernetes master|Kubernetes contr
 sed -i "s|CLUSTERADDRESS|$cluster_url|g" jcasc-default-config.yaml
 sed -i "s|\x1b\[[^m]*m||g" jcasc-default-config.yaml
 
-# Configure ArgoCD
+# Configure ArgoCD password
 echo "updating ArgoCD password..."
 ARGOCD_PWD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d )
 argocd login argocd.cluster.clearavenue.com --grpc-web --insecure --username admin --password $ARGOCD_PWD
@@ -267,6 +272,11 @@ argocd proj role create default jenkins-deploy-role --description "jenkins deplo
 argocd proj role add-policy default jenkins-deploy-role --action '*' --permission 'allow' --object '*'
 roletoken=$(argocd proj role create-token default jenkins-deploy-role | awk '/Token:/ {print $NF}')
 sed -i "s|ARGOCD-DEPLOY-ROLE|$roletoken|g" jcasc-default-config.yaml
+
+echo updating jcasc in jenkins
+java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 apply-configuration < jcasc-default-config.yaml
+sleep 10
+java -jar jenkins-cli.jar -s https://jenkins.cluster.clearavenue.com -auth jenkins:cL3ar#12 restart
 
 # create a clusterrolebinding for jenkins
 echo create a clusterrolebinding for jenkins

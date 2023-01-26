@@ -72,7 +72,6 @@ jenkins:
       - key: "jenkins/jenkins-jenkins-agent"
         value: "true"
       podRetention: "onFailure"
-      serverUrl: "http://kubernetes.default"
       templates:
       - containers:
         - args: "^${computer.jnlpmac} ^${computer.name}"
